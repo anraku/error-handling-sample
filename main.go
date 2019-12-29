@@ -33,31 +33,25 @@ func service(s string) error {
 func main() {
 	e := echo.New()
 	e.Use(middleware.Logger())
-	e.Use(ErrorHandler)
+	e.HTTPErrorHandler = ErrorHandler
 	e.GET("/", handler)
 	e.Logger.Fatal(e.Start(":1323"))
 }
 
-func ErrorHandler(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) error {
-		var appErr *AppErr
-		if err := next(c); err != nil {
-			if errors.As(err, &appErr) {
-				switch appErr.Level {
-				case Fatal:
-					fmt.Printf("[%s] %d %+v\n", appErr.Level, appErr.Code, appErr.Unwrap())
-				case Error:
-					fmt.Printf("[%s] %d %+v\n", appErr.Level, appErr.Code, appErr.Unwrap())
-				case Warning:
-				}
-			} else {
-				appErr = ErrUnknown
-			}
-			c.JSON(appErr.Code, m{"message": appErr.Message})
-			return appErr.Unwrap()
+func ErrorHandler(err error, c echo.Context) {
+	var appErr *AppErr
+	if errors.As(err, &appErr) {
+		switch appErr.Level {
+		case Fatal:
+			fmt.Printf("[%s] %d %+v\n", appErr.Level, appErr.Code, appErr.Unwrap())
+		case Error:
+			fmt.Printf("[%s] %d %+v\n", appErr.Level, appErr.Code, appErr.Unwrap())
+		case Warning:
 		}
-		return nil
+	} else {
+		appErr = ErrUnknown
 	}
+	c.JSON(appErr.Code, m{"message": appErr.Message})
 }
 
 type AppErr struct {
