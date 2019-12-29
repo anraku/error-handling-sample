@@ -8,8 +8,10 @@ import (
 	"github.com/labstack/echo/middleware"
 )
 
+// mapのシンタックスシュガー
 type m map[string]interface{}
 
+// handler→usecase→serviceという流れで実装
 func handler(c echo.Context) error {
 	err := usecase("hoge")
 	if err != nil {
@@ -38,6 +40,7 @@ func main() {
 	e.Logger.Fatal(e.Start(":1323"))
 }
 
+// エラーハンドリングの実装
 func ErrorHandler(err error, c echo.Context) {
 	var appErr *AppErr
 	if errors.As(err, &appErr) {
@@ -54,6 +57,7 @@ func ErrorHandler(err error, c echo.Context) {
 	c.JSON(appErr.Code, m{"message": appErr.Message})
 }
 
+// ここから下はエラー型とエラー変数の定義
 type AppErr struct {
 	Level   ErrLevel
 	Code    int
@@ -62,7 +66,7 @@ type AppErr struct {
 }
 
 func (e *AppErr) Error() string {
-	return fmt.Sprintf("[%s]: %d %s", e.Level, e.Code, e.Message)
+	return fmt.Sprintf("[%s] %d: %+v", e.Level, e.Code, e.err)
 }
 
 type ErrLevel string
